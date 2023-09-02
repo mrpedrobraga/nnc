@@ -1,3 +1,5 @@
+mod file_importer;
+
 fn main() {
-    println!("Hello, world!");
+    file_importer::hi()
 }
