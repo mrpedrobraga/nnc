@@ -1,4 +1,4 @@
-use std::{env, error::Error};
+use std::env;
 
 use file_importer::import_nano_source;
 
