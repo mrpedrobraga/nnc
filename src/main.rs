@@ -1,4 +1,6 @@
-use std::env;
+use std::{env, error::Error};
+
+use file_importer::import_nano_source;
 
 mod file_importer;
 
@@ -13,7 +15,23 @@ fn main() {
     
     match args[1].as_str() {
         "help" => print_help(),
-        "compile" => {}
+        "compile" => {
+            if args.len() < 3 {
+                println!("Usage: `nnc compile <entry_file>`\nfor example: `nnc compile ./index.nano`")
+            }
+
+            let source = import_nano_source(args[2].as_str());
+            
+            let source = match source {
+                Err(e) => {
+                    println!("File '{}' not found:\n → {}", args[2], e);
+                    return;
+                }
+                Ok(t) => t,
+            };
+
+            println!("{}", source);
+        }
         _ => {
             println!("Subcommand '{}' not recognized.\nUse `nnc help` to see a quick manual.", args[1])
         }

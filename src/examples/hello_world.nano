@@ -1,0 +1,13 @@
+###
+
+Hello world!
+
+This is a simple nano "hello world",
+a program that stores a string literal
+`"Hello World!"`, and, when executed,
+prints it to the standard output and
+immediately exits with code `0`.
+
+###
+
+print "Hello world!"
