@@ -105,5 +105,10 @@ pub enum ParseRuleName {
     ExprListComma,
 
     RecursiveExpr,
-    Expr
+    Expr,
+
+    BinaryOp,
+    UnaryOp,
+
+    SingleToken(Token),
 }

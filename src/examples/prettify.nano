@@ -1,0 +1,50 @@
+# Prettyfying is basically generating source code
+# given some existing CST and some extra style parameters.
+
+# `nnc fmt` would generate a CST (and possibly cache it idk)
+# and then regenerate the source based on it, trying to make
+# the least alterations possible to the tokens, while cleaning up
+# things such as trailing whitespace, and realigning groupings
+# with the desired line width.
+
+let max_col = 30            |  #<-- Here.
+
+# A node of the CST has only a few modes it can
+# be represented via text.
+
+# For example, a []-grouping :
+
+# 1 - [0, 1, 2, 3, 4]
+
+# 2 - [
+#   0, 1, 2, 3, 4 
+# ]
+
+# (or [ \n item+ \n ])
+
+# 3 - [
+#   0
+#   1
+#   2
+#   3
+#   4
+# ]
+
+# (or [ \n INDENT (item \n)+ DEDENT ])
+
+# It should choose between these stages depending
+# the amount of *stress* the line has.
+
+# The first total line height is calculated by adding
+# the sizes of all the branches of the CST node
+# as if there were no line breaks.
+
+# In case of nested groupings, parent groupings
+# should collapse the most they can before asking its
+# children to do anything.
+
+[
+    [0, 1, 2, 3, 4],
+    [0, 1, 2, 3, 4, 5],
+    [0, 1, 2, 3, 4],
+]

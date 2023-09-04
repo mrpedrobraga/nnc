@@ -2,9 +2,11 @@ use std::env;
 use colored::Colorize;
 
 use file_importer::import_as_text;
-use tokenizer::tokenize;
+use parser::tokenize;
 
-mod tokenizer;
+use crate::parser::build_tree;
+
+mod parser;
 mod file_importer;
 pub mod grammar;
 
@@ -13,7 +15,7 @@ fn main() {
     let version = "0.0.1";
 
     if args.len() < 2 {
-        println!("\n{} - the {} compiler\n{} {}.\n\n{}\n", "`nnc`".green().bold(), "nano".cyan(), "Version:".dimmed(), version.cyan(), "Use `nnc` help to see a quick manual.".dimmed());
+        println!("\n{} - the {} compiler\n{} {}.\n\n{}", "`nnc`".green().bold(), "nano".cyan(), "Version:".dimmed(), version.cyan(), "Use `nnc` help to see a quick manual.".dimmed());
         return
     }
     
@@ -22,7 +24,7 @@ fn main() {
         "help" => print_help(),
         "compile" => {
             if args.len() < 3 {
-                println!("{}: `nnc compile <entry_file>`\nfor example: `nnc compile ./index.nano`", "Usage".bold());
+                println!("{}: `nnc compile <entry_file>`\n{}", "Usage".bold(), "for example: `nnc compile ./index.nano`".dimmed());
                 return
             }
 
@@ -30,13 +32,15 @@ fn main() {
             
             let source = match source {
                 Err(e) => {
-                    println!("File '{}' not found:\n → {}\n", args[2], e);
+                    println!("`{} {} -- {}`:\n File '{}' not found:\n → {}", "nnc".green(), "compile".cyan(), "FAILED".red().bold(), args[2], e);
                     return;
                 }
                 Ok(t) => t,
             };
 
-            let _ = tokenize(source.as_str());
+            let tokens = tokenize(source.as_str());
+
+            let _ = build_tree(tokens.as_ref());
         }
         _ => {
             println!("Subcommand '{}' not recognized.\nUse `nnc help` to see a quick manual.", args[1])

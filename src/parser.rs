@@ -4,7 +4,7 @@ use crate::grammar::{TOKEN_MATCHERS, Token, TokenName};
     Tokenizer, which will be used both by the compiler,
     the formatter, the linter and the LSP.
 */
-pub fn tokenize(source: &str) {
+pub fn tokenize(source: &str) -> Vec<Token> {
     let mut tokens: Vec<Token> = vec![];
     let mut char_offset: usize = 0;
 
@@ -34,10 +34,12 @@ pub fn tokenize(source: &str) {
         }
     }
 
-    for tok in tokens {
-        match tok.name {
-            TokenName::Whitespace => {},
-            _ => println!("[{:?} : '{}']", tok.name, &source[tok.occurrence_index..tok.occurrence_index+tok.length]),
-        }
-    }
+    return tokens
 } 
+
+pub fn build_tree(source: &[Token]) {
+    match source[..] {
+        [ Token {name: TokenName::Identifier, ..} ] => {}
+        _ => {}
+    }
+}

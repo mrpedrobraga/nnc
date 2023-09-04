@@ -1,0 +1,33 @@
+fn add(a, b) -> a + b
+
+%%test fn arithmetic -> (
+    %%t_eq(add(1, 2), 3)
+    %%t_eq(add(20, 40), 60)
+    %%t_eq(add(-1, 0), -1)
+    select %%t_eq(add(num, 0), num) for num in 0..5
+)
+
+%%test fn floats -> (
+    %%t_eq(0.1 + 0.1, 0.2)
+)
+
+###
+
+$ nnc test ./index.nano
+
+---- arithmetic -------------------\
+| EQU | add(1, 2)   |  3 | SUCCESS |
+| EQU | add(20, 40) | 60 | SUCCESS |
+| EQU | add(1, 2)   |  3 | SUCCESS |
+| EQU | add(0, 0)   |  0 | SUCCESS |
+| EQU | add(1, 0)   |  1 | SUCCESS |
+| EQU | add(2, 0)   |  2 | SUCCESS |
+| EQU | add(3, 0)   |  3 | SUCCESS |
+| EQU | add(4, 0)   |  4 | SUCCESS |
+\-----------------------------------
+
+---- floats ---------------------\
+| EQU | 0.1 + 0.1 | 0.2 | FAILED |
+\---------------------------------
+
+###

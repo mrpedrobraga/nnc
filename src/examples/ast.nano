@@ -1,0 +1,41 @@
+let n = ASTNode
+let t = Token
+
+
+# AST!
+(n PROGRAM
+    (n EXPR_L
+        (n EXPR
+            (n BINARY_EXPR
+                (t OP_PLUS)
+                (n EXPR_L
+                    (t INT_LITERAL
+                        1
+                    )
+                )
+                (n EXPR_L
+                    (t INT_LITERAL
+                        2
+                    )
+                )
+            )
+        )
+    )
+)
+
+let i = IRNode
+
+# IR
+(i SYMBOL_CALL
+    "__nano__::sum"  # Resolve / Coerce
+    args: [
+        (i LITERAL
+            type: "__nano__::int"  # Resolve / Coerce
+            value: 1
+        )
+        (i LITERAL
+            type: "__nano__::int"  # Resolve / Coerce
+            value: 2
+        )
+    ]
+)
