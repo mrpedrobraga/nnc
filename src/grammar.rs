@@ -21,7 +21,7 @@ pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
     TokenMatcher { name: TokenName::Semicolon, regex: regex!(r"^;") },
     TokenMatcher { name: TokenName::Colon, regex: regex!(r"^:") },
 
-    TokenMatcher { name: TokenName::IntLiteral, regex: regex!(r"^([0-9_]+|0x[0-9a-zA-Z_]+|0b[0-9]+)") },
+    TokenMatcher { name: TokenName::IntLiteral, regex: regex!(r"^(0x[0-9a-zA-Z_]+|0b[0-9]+|[0-9_]+)") },
 
     TokenMatcher { name: TokenName::Identifier, regex: regex!(r"^[a-zA-Z_][a-zA-Z0-9_]*") },
 
@@ -86,4 +86,24 @@ pub enum TokenName {
     OpDoubleForwardSlash, // '//'
     OpPercent,     // %
     OpEqSign,     // =
+}
+
+pub struct CSTNode {
+    matched_with: ParseRuleName,
+    branches: Vec<CSTNode>
+}
+
+pub struct ASTNode {
+    matched_with: ParseRuleName,
+    branches: Vec<CSTNode>
+}
+
+pub enum ParseRuleName {
+    Program,
+
+    ExprListSemicolon,
+    ExprListComma,
+
+    RecursiveExpr,
+    Expr
 }

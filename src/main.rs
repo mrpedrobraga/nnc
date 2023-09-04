@@ -1,4 +1,5 @@
 use std::env;
+use colored::Colorize;
 
 use file_importer::import_as_text;
 use tokenizer::tokenize;
@@ -12,22 +13,24 @@ fn main() {
     let version = "0.0.1";
 
     if args.len() < 2 {
-        println!("`nnc` - the `nano` compiler\nVersion: '{}'.\n\nUse `nnc` help to see a quick manual.", version);
+        println!("\n{} - the {} compiler\n{} {}.\n\n{}\n", "`nnc`".green().bold(), "nano".cyan(), "Version:".dimmed(), version.cyan(), "Use `nnc` help to see a quick manual.".dimmed());
         return
     }
     
+    print!("\n");
     match args[1].as_str() {
         "help" => print_help(),
         "compile" => {
             if args.len() < 3 {
-                println!("Usage: `nnc compile <entry_file>`\nfor example: `nnc compile ./index.nano`")
+                println!("{}: `nnc compile <entry_file>`\nfor example: `nnc compile ./index.nano`", "Usage".bold());
+                return
             }
 
             let source = import_as_text(args[2].as_str());
             
             let source = match source {
                 Err(e) => {
-                    println!("File '{}' not found:\n → {}", args[2], e);
+                    println!("File '{}' not found:\n → {}\n", args[2], e);
                     return;
                 }
                 Ok(t) => t,
@@ -39,19 +42,20 @@ fn main() {
             println!("Subcommand '{}' not recognized.\nUse `nnc help` to see a quick manual.", args[1])
         }
     }
+    print!("\n");
 
     //file_importer::import_nano_source("./examples/hello_world.nano");
 }
 
 fn print_help() {
-    println!("Usage: `nnc <subcommand>`.");
+    println!("Usage: `{} {}`.", "nnc".green().bold(), "<subcommand>".blue().bold());
     println!("");
-    println!("compile <entry_file>\n - Begins compilation starting at <entry_file>.\n");
-    println!("run <entry_file>\n - Same as `compile`, but immediately runs the exported executable.\n");
-    println!("clean\n - Cleans unnecessary cache.\n");
-    println!("test <entry_file>\n - Begins testing starting at <entry_file>.\n");
-    println!("lint <file>\n - Locates linting configuration in the workspace, then provides ERRORs and WARNINGs for a file.\n");
-    println!("fmt <file>\n - Locates a style configuration and formats the file accordingly.\n");
-    println!("lsp <port>\n - Starts the language server in a given port.\n");
-    println!("The compilation parameters and flags can be read from your nano source to further alter compilation/testing params.\n")
+    println!("{}\n - Begins compilation starting at <entry_file>.\n", "compile <entry_file>".bold());
+    println!("{}\n - Same as `compile`, but immediately runs the exported executable.\n", "run <entry_file>".bold());
+    println!("{}\n - Cleans unnecessary cache.\n", "clean".bold());
+    println!("{}\n - Begins testing starting at <entry_file>.\n", "test <entry_file>".bold());
+    println!("{}\n - Locates linting configuration in the workspace, then provides ERRORs and WARNINGs for a file.\n", "lint <file>".bold());
+    println!("{}\n - Locates a style configuration and formats the file accordingly.\n", "fmt <file>".bold());
+    println!("{}\n - Starts the language server in a given port.\n", "lsp <port>".bold());
+    println!("{}", "The compilation parameters and flags can be read from your nano source to further alter compilation/testing params.".dimmed())
 }
