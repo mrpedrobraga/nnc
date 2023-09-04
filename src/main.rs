@@ -1,8 +1,11 @@
 use std::env;
 
-use file_importer::import_nano_source;
+use file_importer::import_as_text;
+use tokenizer::tokenize;
 
+mod tokenizer;
 mod file_importer;
+pub mod grammar;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -20,7 +23,7 @@ fn main() {
                 println!("Usage: `nnc compile <entry_file>`\nfor example: `nnc compile ./index.nano`")
             }
 
-            let source = import_nano_source(args[2].as_str());
+            let source = import_as_text(args[2].as_str());
             
             let source = match source {
                 Err(e) => {
@@ -30,7 +33,7 @@ fn main() {
                 Ok(t) => t,
             };
 
-            println!("{}", source);
+            let _ = tokenize(source.as_str());
         }
         _ => {
             println!("Subcommand '{}' not recognized.\nUse `nnc help` to see a quick manual.", args[1])
