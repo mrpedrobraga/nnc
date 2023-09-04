@@ -14,12 +14,22 @@ pub struct TokenMatcher {
 }
 
 pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
+    // Make sure to escape everything well :'-)
     TokenMatcher { name: TokenName::Newline, regex: regex!(r"^\n") },
-    TokenMatcher { name: TokenName::Whitespace, regex: regex!(r"^[ \s\r\f\t\n]") },
+    TokenMatcher { name: TokenName::Whitespace, regex: regex!(r"^[ \s\r\f\t\n]+") },
 
     TokenMatcher { name: TokenName::Comma, regex: regex!(r"^,") },
     TokenMatcher { name: TokenName::Semicolon, regex: regex!(r"^;") },
     TokenMatcher { name: TokenName::Colon, regex: regex!(r"^:") },
+    TokenMatcher { name: TokenName::ThinArrow, regex: regex!(r"^->") },
+    TokenMatcher { name: TokenName::Pipe, regex: regex!(r"^\|>") },
+
+    TokenMatcher { name: TokenName::ParenthesisOpen, regex: regex!(r"^\(") },
+    TokenMatcher { name: TokenName::ParenthesisClose, regex: regex!(r"^\)") },
+    TokenMatcher { name: TokenName::SqBracketsOpen, regex: regex!(r"^\[") },
+    TokenMatcher { name: TokenName::SqBracketsClose, regex: regex!(r"^\]") },
+    TokenMatcher { name: TokenName::CrBracketsOpen, regex: regex!(r"^\{") },
+    TokenMatcher { name: TokenName::CrBracketsClose, regex: regex!(r"^\}") },
 
     TokenMatcher { name: TokenName::IntLiteral, regex: regex!(r"^(0x[0-9a-zA-Z_]+|0b[0-9]+|[0-9_]+)") },
 
@@ -44,6 +54,8 @@ pub enum TokenName {
 
     Identifier,     // hello foo_bar Baz ❤️
 
+    ThinArrow,  // '->'
+    Pipe,  // '|>'
     Semicolon,  // ';'
     Comma,      // ','
 

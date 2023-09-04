@@ -27,7 +27,7 @@ let i = IRNode
 
 # IR
 (i SYMBOL_CALL
-    "__nano__::sum"  # Resolve / Coerce
+    symbol: "__nano__::sum"  # Resolve / Coerce
     args: [
         (i LITERAL
             type: "__nano__::int"  # Resolve / Coerce
