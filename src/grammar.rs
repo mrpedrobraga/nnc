@@ -148,11 +148,27 @@ pub enum TokenName {
     OpEqSign,             // =
 }
 
+pub fn is_ghost_token(tname: &TokenName) -> bool {
+    match tname {
+        TokenName::Whitespace
+        | TokenName::Indent
+        | TokenName::Comment
+        | TokenName::BlockComment
+        | TokenName::Newline => true,
+        _ => return false,
+    }
+}
+
 #[derive(Debug)]
 pub struct ASTNode<'a> {
-    pub matched_with: ParseRuleName,
-    pub branches: Option<&'a [ASTNode<'a>]>,
-    pub leaf: Option<&'a [Token]>,
+    pub matched_with: &'static str,
+    pub content: ASTNodeContent<'a>,
+}
+
+#[derive(Debug)]
+pub enum ASTNodeContent<'a> {
+    Leaf(&'a [Token]),
+    Branches(Box<ASTNode<'a>>),
 }
 
 #[derive(Debug)]
@@ -161,29 +177,10 @@ pub struct AST<'a> {
     pub root: ASTNode<'a>,
 }
 
-#[derive(Debug)]
-pub enum ParseRuleName {
-    Program,
-
-    ExprListSemicolon,
-    ExprListComma,
-
-    RecursiveExpr,
-    Expr,
-
-    BinaryOp,
-    UnaryOp,
-
-    SingleToken(Token),
-}
-
 pub static NANO_PARSE_RULES: &'static [(&'static str, &ParseRule)] =
     &[("Literal", &ParseRule::SingleToken(TokenName::IntLiteral))];
 
-pub fn get_rule(
-    list: &'static [(&'static str, &ParseRule)],
-    key: &str,
-) -> Option<&'static ParseRule> {
+pub fn get_rule<'a>(list: &'a [(&'static str, &ParseRule)], key: &str) -> Option<&'a ParseRule> {
     let r = NANO_PARSE_RULES.iter().position(|(_k, _v)| *_k == key);
 
     let (_, v) = match r {

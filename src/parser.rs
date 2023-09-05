@@ -1,14 +1,12 @@
 use colored::Colorize;
 
 use crate::grammar::{
-    get_rule, ASTNode, ParseRule, ParseRuleName, Token, TokenName, AST, NANO_PARSE_RULES,
-    TOKEN_MATCHERS,
+    get_rule, is_ghost_token, ASTNode, ASTNodeContent, ParseRule, Token, TokenName, AST,
+    NANO_PARSE_RULES, TOKEN_MATCHERS,
 };
 
-/*
-    Tokenizer, which will be used both by the compiler,
-    the formatter, the linter and the LSP.
-*/
+/// Tokenizer, which will be used both by the compiler,
+/// the formatter, the linter and the LSP.
 pub fn tokenize(source: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut char_offset: usize = 0;
@@ -76,11 +74,24 @@ pub fn tokenize(source: &str) -> Vec<Token> {
     return tokens;
 }
 
-pub fn build_tree(source: &Vec<Token>, keep_ghost_tokens: bool) -> Option<AST> {
+/// Builds a tree given a pool of vectors, and a starting rule.
+pub fn build_tree<'a>(
+    source: &'a Vec<Token>,
+    start_rule_name: &'static str,
+    keep_ghost_tokens: bool,
+) -> Option<AST<'a>> {
+    let start_rule = get_rule(NANO_PARSE_RULES, start_rule_name);
+    match start_rule {
+        None => return None,
+        Some(r) => r,
+    };
+
     let tree = match_rule(
         &source[..],
-        "Literal",
-        ParseContext { tok_index: 0 },
+        start_rule_name,
+        ParseContext {
+            parse_rule_list: NANO_PARSE_RULES,
+        },
         keep_ghost_tokens,
     );
 
@@ -92,24 +103,23 @@ pub fn build_tree(source: &Vec<Token>, keep_ghost_tokens: bool) -> Option<AST> {
     return Some(AST {
         is_abstract: !keep_ghost_tokens,
         root: ASTNode {
-            matched_with: ParseRuleName::SingleToken(Token {
-                name: TokenName::IntLiteral,
-                occurrence_index: 0,
-                length: 1,
-            }),
-            branches: None,
-            leaf: tree.leaf,
+            matched_with: start_rule_name,
+            content: tree.content,
         },
     });
 }
 
+// Matches a rule to the beggining of a slice of the token pool.
 pub fn match_rule<'a>(
     slice: &'a [Token],
     rule_name: &str,
     context: ParseContext,
-    keep_ghost_tokens: bool,
+    _keep_ghost_tokens: bool,
 ) -> Option<ParseRuleMatchResult<'a>> {
-    let rule = get_rule(NANO_PARSE_RULES, rule_name);
+    // Retrieves the rule from the list to match
+    // The list should probably rather be stored
+    // in the ParseContext.
+    let rule = get_rule(context.parse_rule_list, rule_name);
     let rule = match rule {
         None => {
             println!("{} '{}'.", "No rule found with the name", rule_name);
@@ -118,35 +128,51 @@ pub fn match_rule<'a>(
         Some(r) => r,
     };
 
+    // Matching the rule
     match rule {
+        // Single token o/ IDENTIFIER /
         ParseRule::SingleToken(tok) => {
             println!("{:?}", tok);
             if slice[0].name == *tok {
                 return Some(ParseRuleMatchResult {
                     matched: true,
                     advance: 1,
-                    branches: None,
-                    leaf: Some(&slice[0..1]),
+                    content: ASTNodeContent::Leaf(&slice[0..1]),
+                });
+            } else if is_ghost_token(tok) {
+                return Some(ParseRuleMatchResult {
+                    matched: false,
+                    advance: 1,
+                    content: ASTNodeContent::Leaf(&slice[0..1]),
                 });
             } else {
                 return None;
             }
         }
-        ParseRule::Keyword(tok, content) => None,
-        ParseRule::Disjunction(cases) => None,
-        ParseRule::Conjunction(cases) => None,
-        ParseRule::Nest(sub_rule) => None,
+
+        // Single token o/ IDENTIFIER & {content: "while"} /
+        ParseRule::Keyword(_tok, _contentt) => None,
+
+        // Disjunction o/ ( SEMICOLON | NEWLINE ) /
+        ParseRule::Disjunction(_cases) => None,
+
+        // Conjunction o/ SEMICOLON & NEWLINE /
+        // I think it's mostly unused in this parser
+        ParseRule::Conjunction(_cases) => None,
+
+        // Reference to another ParseRule --
+        // it's what makes this a recursive descent parser
+        ParseRule::Nest(_sub_rule) => None,
     }
 }
 
-pub struct ParseContext {
-    pub tok_index: usize,
+pub struct ParseContext<'a> {
+    pub parse_rule_list: &'a [(&'static str, &'a ParseRule)],
 }
 
 pub struct ParseRuleMatchResult<'a> {
     pub matched: bool,
     pub advance: usize,
 
-    pub leaf: Option<&'a [Token]>,
-    pub branches: Option<ASTNode<'a>>,
+    pub content: ASTNodeContent<'a>,
 }
