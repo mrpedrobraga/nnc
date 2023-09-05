@@ -86,7 +86,7 @@ fn compile(args: &Vec<String>) -> Option<bool> {
     let tokens = tokenize(source.as_str());
 
     // Parsing: Vec<Token> -> AST
-    let tree = build_tree(&tokens, "Literal", true);
+    let tree = build_tree(&tokens, "Program", false);
 
     let tree = match tree {
         None => return None,

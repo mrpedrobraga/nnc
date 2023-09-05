@@ -1,28 +1,16 @@
 use lazy_regex::*;
 
-#[derive(Debug)]
-pub struct Token {
-    pub name: TokenName,
-    pub occurrence_index: usize,
-    pub length: usize,
-}
-
-#[derive(Debug)]
-pub struct TokenMatcher {
-    pub regex: &'static Lazy<Regex>,
-    pub name: TokenName,
-}
-
 pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
-    // Make sure to escape everything well :'-)
+    // Whitespace
     TokenMatcher {
         name: TokenName::Newline,
-        regex: regex!(r"^\n"),
+        regex: regex!(r"^\r?\n"),
     },
     TokenMatcher {
         name: TokenName::Whitespace,
-        regex: regex!(r"^[ \s\r\f\t\n]+"),
+        regex: regex!(r"^[ \s\r\f\t]+"),
     },
+    // AST Operators
     TokenMatcher {
         name: TokenName::Comma,
         regex: regex!(r"^,"),
@@ -67,30 +55,73 @@ pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
         name: TokenName::CrBracketsClose,
         regex: regex!(r"^\}"),
     },
+    // Literals
     TokenMatcher {
         name: TokenName::IntLiteral,
         regex: regex!(r"^(0x[0-9a-zA-Z_]+|0b[0-9]+|[0-9_]+)"),
     },
     TokenMatcher {
+        name: TokenName::StringLiteral,
+        regex: regex!(r#"^".*?""#),
+    },
+    // Identifier / Keyword
+    TokenMatcher {
         name: TokenName::Identifier,
         regex: regex!(r"^[a-zA-Z_][a-zA-Z0-9_]*"),
     },
+    // Comments
     TokenMatcher {
         name: TokenName::Comment,
         regex: regex!(r"^###[\s\S]*?###"),
     },
+    // Operators
     TokenMatcher {
         name: TokenName::OpAnd,
         regex: regex!(r"^#.*?\n"),
     },
-    TokenMatcher {
-        name: TokenName::StringLiteral,
-        regex: regex!(r#"^".*?""#),
-    },
 ];
+
+pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[
+    (
+        "Program",
+        &[
+            ParseRule::SingleToken(TokenName::IntLiteral),
+            ParseRule::SingleToken(TokenName::Newline),
+            ParseRule::SingleToken(TokenName::EOF),
+        ],
+    ),
+    ("Expr", &[ParseRule::SingleToken(TokenName::IntLiteral)]),
+    ("Literal", &[ParseRule::SingleToken(TokenName::IntLiteral)]),
+];
+
+pub fn is_ghost_token(tname: &TokenName) -> bool {
+    match tname {
+        TokenName::Whitespace
+        | TokenName::Indent
+        | TokenName::Comment
+        | TokenName::BlockComment
+        | TokenName::Newline => true,
+        _ => return false,
+    }
+}
+
+#[derive(Debug)]
+pub struct Token {
+    pub name: TokenName,
+    pub occurrence_index: usize,
+    pub length: usize,
+}
+
+#[derive(Debug)]
+pub struct TokenMatcher {
+    pub regex: &'static Lazy<Regex>,
+    pub name: TokenName,
+}
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TokenName {
+    EOF,
+
     // In nano, these tokens are 'ghost' tokens,
     // that is, they are by default ignorable by parse rules.
     // Ghost tokens are *still* matcheable in parse rules...
@@ -148,26 +179,15 @@ pub enum TokenName {
     OpEqSign,             // =
 }
 
-pub fn is_ghost_token(tname: &TokenName) -> bool {
-    match tname {
-        TokenName::Whitespace
-        | TokenName::Indent
-        | TokenName::Comment
-        | TokenName::BlockComment
-        | TokenName::Newline => true,
-        _ => return false,
-    }
-}
-
 #[derive(Debug)]
 pub struct ASTNode<'a> {
     pub matched_with: &'static str,
-    pub content: ASTNodeContent<'a>,
+    pub content: Vec<ASTNodeContent<'a>>,
 }
 
 #[derive(Debug)]
 pub enum ASTNodeContent<'a> {
-    Leaf(&'a [Token]),
+    Leaf(&'a Token),
     Branches(Box<ASTNode<'a>>),
 }
 
@@ -177,10 +197,10 @@ pub struct AST<'a> {
     pub root: ASTNode<'a>,
 }
 
-pub static NANO_PARSE_RULES: &'static [(&'static str, &ParseRule)] =
-    &[("Literal", &ParseRule::SingleToken(TokenName::IntLiteral))];
-
-pub fn get_rule<'a>(list: &'a [(&'static str, &ParseRule)], key: &str) -> Option<&'a ParseRule> {
+pub fn get_rule<'a>(
+    list: &'a [(&'static str, &[ParseRule])],
+    key: &str,
+) -> Option<&'a [ParseRule]> {
     let r = NANO_PARSE_RULES.iter().position(|(_k, _v)| *_k == key);
 
     let (_, v) = match r {

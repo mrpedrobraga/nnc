@@ -71,6 +71,12 @@ pub fn tokenize(source: &str) -> Vec<Token> {
         }
     }
 
+    tokens.push(Token {
+        name: TokenName::EOF,
+        occurrence_index: char_offset,
+        length: 0,
+    });
+
     return tokens;
 }
 
@@ -96,7 +102,10 @@ pub fn build_tree<'a>(
     );
 
     let tree = match tree {
-        None => return None,
+        None => {
+            println!("Parsing stage failed.");
+            return None;
+        }
         Some(t) => t,
     };
 
@@ -114,7 +123,7 @@ pub fn match_rule<'a>(
     slice: &'a [Token],
     rule_name: &str,
     context: ParseContext,
-    _keep_ghost_tokens: bool,
+    keep_ghost_tokens: bool,
 ) -> Option<ParseRuleMatchResult<'a>> {
     // Retrieves the rule from the list to match
     // The list should probably rather be stored
@@ -128,51 +137,72 @@ pub fn match_rule<'a>(
         Some(r) => r,
     };
 
-    // Matching the rule
-    match rule {
-        // Single token o/ IDENTIFIER /
-        ParseRule::SingleToken(tok) => {
-            println!("{:?}", tok);
-            if slice[0].name == *tok {
-                return Some(ParseRuleMatchResult {
-                    matched: true,
-                    advance: 1,
-                    content: ASTNodeContent::Leaf(&slice[0..1]),
-                });
-            } else if is_ghost_token(tok) {
-                return Some(ParseRuleMatchResult {
-                    matched: false,
-                    advance: 1,
-                    content: ASTNodeContent::Leaf(&slice[0..1]),
-                });
-            } else {
-                return None;
-            }
+    let mut overall_advance = 0;
+    let mut token_slice_offset = 0;
+    let mut fragment_index = 0;
+    let mut content: Vec<ASTNodeContent> = Vec::new();
+
+    // For each fragment
+    while fragment_index < rule.len() {
+        let fragment = &rule[fragment_index];
+
+        if token_slice_offset >= slice.len() {
+            println!("Ran out of tokens.");
+            break;
         }
 
-        // Single token o/ IDENTIFIER & {content: "while"} /
-        ParseRule::Keyword(_tok, _contentt) => None,
+        // Matching the fragments one by one
+        match fragment {
+            // Single token o/ IDENTIFIER /
+            ParseRule::SingleToken(tok) => {
+                let matching_token = &slice[token_slice_offset];
 
-        // Disjunction o/ ( SEMICOLON | NEWLINE ) /
-        ParseRule::Disjunction(_cases) => None,
+                if matching_token.name == *tok {
+                    content.push(ASTNodeContent::Leaf(&slice[token_slice_offset]));
+                    overall_advance += slice[token_slice_offset].length;
+                    fragment_index += 1;
+                    token_slice_offset += 1;
+                } else if is_ghost_token(&matching_token.name) {
+                    if keep_ghost_tokens {
+                        content.push(ASTNodeContent::Leaf(&slice[token_slice_offset]))
+                    }
+                    overall_advance += slice[token_slice_offset].length;
+                    token_slice_offset += 1;
+                } else {
+                    return None;
+                }
+            }
 
-        // Conjunction o/ SEMICOLON & NEWLINE /
-        // I think it's mostly unused in this parser
-        ParseRule::Conjunction(_cases) => None,
+            // Single token o/ IDENTIFIER & {content: "while"} /
+            ParseRule::Keyword(_tok, _contentt) => (),
 
-        // Reference to another ParseRule --
-        // it's what makes this a recursive descent parser
-        ParseRule::Nest(_sub_rule) => None,
+            // Disjunction o/ ( SEMICOLON | NEWLINE ) /
+            ParseRule::Disjunction(_cases) => (),
+
+            // Conjunction o/ SEMICOLON & NEWLINE /
+            // I think it's mostly unused in this parser
+            ParseRule::Conjunction(_cases) => (),
+
+            // Reference to another ParseRule --
+            // it's what makes this a recursive descent parser
+            ParseRule::Nest(_sub_rule) => (),
+        };
     }
+
+    return Some(ParseRuleMatchResult {
+        matched: true,
+        advance: overall_advance,
+        content,
+    });
 }
 
 pub struct ParseContext<'a> {
-    pub parse_rule_list: &'a [(&'static str, &'a ParseRule)],
+    pub parse_rule_list: &'a [(&'static str, &'a [ParseRule])],
 }
 
 pub struct ParseRuleMatchResult<'a> {
     pub matched: bool,
     pub advance: usize,
 
-    pub content: ASTNodeContent<'a>,
+    pub content: Vec<ASTNodeContent<'a>>,
 }
