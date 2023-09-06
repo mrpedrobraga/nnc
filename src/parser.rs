@@ -1,8 +1,12 @@
 use colored::Colorize;
 
-use crate::grammar::{
-    get_rule, get_token_string_content, is_ghost_token, ASTNode, ASTNodeContent, ParseRule, Token,
-    TokenName, AST, NANO_PARSE_RULES, TOKEN_MATCHERS,
+use crate::{
+    grammar::{
+        get_rule, get_token_string_content, ASTNode, ASTNodeContent, ParseRule, Token, TokenName,
+        AST,
+    },
+    nano_grammar::NANO_TOKEN_RULES,
+    nano_grammar::{is_ghost_token, NANO_PARSE_RULES},
 };
 
 /// Tokenizer, which will be used both by the compiler,
@@ -17,7 +21,7 @@ pub fn tokenize(source: &str) -> Vec<Token> {
     while char_offset < source.len() {
         let mut has_match = false;
 
-        'matchers: for matcher in TOKEN_MATCHERS {
+        'matchers: for matcher in NANO_TOKEN_RULES {
             let source_slice: &str = &source[char_offset..];
             let captures = matcher.regex.captures(source_slice);
 

@@ -6,6 +6,7 @@ use std::env;
 
 mod file_importer;
 pub mod grammar;
+pub mod nano_grammar;
 mod parser;
 
 const VERSION: &'static str = "0.0.1";
