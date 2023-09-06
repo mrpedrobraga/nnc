@@ -199,7 +199,43 @@ pub fn match_rule<'a>(
 
             // Conjunction o/ SEMICOLON & NEWLINE /
             // I think it's mostly unused in this parser
-            ParseRule::Conjunction(_cases) => (),
+            ParseRule::Conjunction(cases) => {
+                let mut failed_any = false;
+                // Similar to how short-circuiting works, the last
+                // case of a conjunction is the one whose match is chosen,
+                // in a subtle breach of Conjunction Comutativity.
+                let mut last_match: Option<ParseRuleMatchResult> = None;
+                for case in *cases {
+                    let nested_match = match_rule(
+                        &source_token_pool[token_slice_offset..],
+                        case,
+                        &context,
+                        keep_ghost_tokens,
+                    );
+                    let nested_match = match nested_match {
+                        None => {
+                            failed_any = true;
+                            break;
+                        }
+                        Some(m) => m,
+                    };
+                    last_match = Some(nested_match)
+                }
+
+                if failed_any {
+                    return None;
+                }
+
+                match last_match {
+                    None => return None,
+                    Some(lm) => {
+                        fragment_index += 1;
+                        token_slice_offset += lm.advance;
+
+                        content.push(ASTNodeContent::Grouping(lm.content));
+                    }
+                }
+            }
 
             // Reference to another ParseRule --
             // it's what makes this a recursive descent parser

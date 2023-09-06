@@ -83,9 +83,9 @@ pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
 
 pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
     "Program",
-    &[ParseRule::Disjunction(&[
+    &[ParseRule::Conjunction(&[
         &[ParseRule::SingleToken(TokenName::Identifier, Some("if"))],
-        &[ParseRule::SingleToken(TokenName::Identifier, Some("else"))],
+        &[ParseRule::SingleToken(TokenName::Identifier, None)],
     ])],
 )];
 
