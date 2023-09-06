@@ -86,6 +86,7 @@ pub struct ASTNode<'a> {
 
 #[derive(Debug)]
 pub enum ASTNodeContent<'a> {
+    None,
     Tok(&'a Token),
     Grouping(Vec<ASTNodeContent<'a>>),
     Node(ASTNode<'a>),
@@ -117,4 +118,6 @@ pub enum ParseRule<'a> {
     Disjunction(&'a [&'a [ParseRule<'a>]]),
     Conjunction(&'a [&'a [ParseRule<'a>]]),
     Nest(&'static str),
+    Optional(&'a [ParseRule<'a>]),
+    Many(&'a [ParseRule<'a>]),
 }

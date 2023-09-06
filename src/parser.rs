@@ -174,6 +174,55 @@ pub fn match_rule<'a>(
                 }
             }
 
+            ParseRule::Optional(sub_fragments) => {
+                let sub_match =
+                    match_rule(source_token_pool, sub_fragments, context, keep_ghost_tokens);
+
+                match sub_match {
+                    None => content.push(ASTNodeContent::None),
+                    Some(t) => {
+                        content.push(ASTNodeContent::Grouping(t.content));
+
+                        token_slice_offset += t.advance;
+                    }
+                }
+
+                fragment_index += 1;
+            }
+
+            ParseRule::Many(sub_fragments) => {
+                let mut matched_at_least_once = false;
+                let mut many_content: Vec<ASTNodeContent> = Vec::new();
+
+                loop {
+                    let sub_match = match_rule(
+                        &source_token_pool[token_slice_offset..],
+                        sub_fragments,
+                        context,
+                        keep_ghost_tokens,
+                    );
+
+                    match sub_match {
+                        Some(t) => {
+                            many_content.push(ASTNodeContent::Grouping(t.content));
+                            println!("Matching");
+                            token_slice_offset += t.advance;
+                            matched_at_least_once = true;
+                        }
+                        None => {
+                            break;
+                        }
+                    }
+                }
+
+                if !matched_at_least_once {
+                    return None;
+                }
+
+                fragment_index += 1;
+                content.push(ASTNodeContent::Grouping(many_content));
+            }
+
             // Disjunction o/ ( SEMICOLON | NEWLINE ) /
             ParseRule::Disjunction(cases) => {
                 let mut matched_any = false;

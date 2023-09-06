@@ -97,8 +97,8 @@ pub fn is_ghost_token(tname: &TokenName) -> bool {
 // The rules used to create the AST
 pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
     "Program",
-    &[ParseRule::Conjunction(&[
-        &[ParseRule::SingleToken(TokenName::Identifier, Some("if"))],
-        &[ParseRule::SingleToken(TokenName::Identifier, None)],
-    ])],
+    &[ParseRule::Many(&[ParseRule::SingleToken(
+        TokenName::Identifier,
+        None,
+    )])],
 )];
