@@ -81,18 +81,13 @@ pub static TOKEN_MATCHERS: &'static [TokenMatcher] = &[
     },
 ];
 
-pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[
-    (
-        "Program",
-        &[
-            ParseRule::SingleToken(TokenName::IntLiteral),
-            ParseRule::SingleToken(TokenName::Newline),
-            ParseRule::SingleToken(TokenName::EOF),
-        ],
-    ),
-    ("Expr", &[ParseRule::SingleToken(TokenName::IntLiteral)]),
-    ("Literal", &[ParseRule::SingleToken(TokenName::IntLiteral)]),
-];
+pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
+    "Program",
+    &[ParseRule::Disjunction(&[
+        &[ParseRule::SingleToken(TokenName::Identifier, Some("if"))],
+        &[ParseRule::SingleToken(TokenName::Identifier, Some("else"))],
+    ])],
+)];
 
 pub fn is_ghost_token(tname: &TokenName) -> bool {
     match tname {
@@ -110,6 +105,10 @@ pub struct Token {
     pub name: TokenName,
     pub occurrence_index: usize,
     pub length: usize,
+}
+
+pub fn get_token_string_content<'a>(tok: &'a Token, src: &'a str) -> &'a str {
+    return &src[tok.occurrence_index..tok.occurrence_index + tok.length];
 }
 
 #[derive(Debug)]
@@ -187,8 +186,9 @@ pub struct ASTNode<'a> {
 
 #[derive(Debug)]
 pub enum ASTNodeContent<'a> {
-    Leaf(&'a Token),
-    Branches(Box<ASTNode<'a>>),
+    Tok(&'a Token),
+    Grouping(Vec<ASTNodeContent<'a>>),
+    Node(ASTNode<'a>),
 }
 
 #[derive(Debug)]
@@ -200,7 +200,7 @@ pub struct AST<'a> {
 pub fn get_rule<'a>(
     list: &'a [(&'static str, &[ParseRule])],
     key: &str,
-) -> Option<&'a [ParseRule]> {
+) -> Option<&'a [ParseRule<'a>]> {
     let r = NANO_PARSE_RULES.iter().position(|(_k, _v)| *_k == key);
 
     let (_, v) = match r {
@@ -212,10 +212,9 @@ pub fn get_rule<'a>(
 }
 
 #[derive(Debug)]
-pub enum ParseRule {
-    SingleToken(TokenName),
-    Keyword(TokenName, String),
-    Disjunction(&'static [ParseRule]),
-    Conjunction(&'static [ParseRule]),
+pub enum ParseRule<'a> {
+    SingleToken(TokenName, Option<&'a str>),
+    Disjunction(&'a [&'a [ParseRule<'a>]]),
+    Conjunction(&'a [&'a [ParseRule<'a>]]),
     Nest(&'static str),
 }
