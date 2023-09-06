@@ -175,14 +175,19 @@ pub fn match_rule<'a>(
             }
 
             ParseRule::Optional(sub_fragments) => {
-                let sub_match =
-                    match_rule(source_token_pool, sub_fragments, context, keep_ghost_tokens);
+                let sub_match = match_rule(
+                    &source_token_pool[token_slice_offset..],
+                    sub_fragments,
+                    context,
+                    keep_ghost_tokens,
+                );
 
                 match sub_match {
                     None => content.push(ASTNodeContent::None),
                     Some(t) => {
-                        content.push(ASTNodeContent::Grouping(t.content));
-
+                        if t.matched {
+                            content.push(ASTNodeContent::Grouping(t.content));
+                        }
                         token_slice_offset += t.advance;
                     }
                 }
@@ -223,7 +228,34 @@ pub fn match_rule<'a>(
                 content.push(ASTNodeContent::Grouping(many_content));
             }
 
-            // Disjunction o/ ( SEMICOLON | NEWLINE ) /
+            ParseRule::OptionalMany(sub_fragments) => {
+                let mut many_content: Vec<ASTNodeContent> = Vec::new();
+
+                loop {
+                    let sub_match = match_rule(
+                        &source_token_pool[token_slice_offset..],
+                        sub_fragments,
+                        context,
+                        keep_ghost_tokens,
+                    );
+
+                    match sub_match {
+                        Some(t) => {
+                            many_content.push(ASTNodeContent::Grouping(t.content));
+                            println!("Matching");
+                            token_slice_offset += t.advance;
+                        }
+                        None => {
+                            break;
+                        }
+                    }
+                }
+
+                fragment_index += 1;
+                content.push(ASTNodeContent::Grouping(many_content));
+            }
+
+            // Disjunction o/ SEMICOLON | NEWLINE /
             ParseRule::Disjunction(cases) => {
                 let mut matched_any = false;
                 for case in *cases {

@@ -120,4 +120,5 @@ pub enum ParseRule<'a> {
     Nest(&'static str),
     Optional(&'a [ParseRule<'a>]),
     Many(&'a [ParseRule<'a>]),
+    OptionalMany(&'a [ParseRule<'a>]),
 }

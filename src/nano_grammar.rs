@@ -95,10 +95,22 @@ pub fn is_ghost_token(tname: &TokenName) -> bool {
 }
 
 // The rules used to create the AST
-pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
-    "Program",
-    &[ParseRule::Many(&[ParseRule::SingleToken(
-        TokenName::Identifier,
-        None,
-    )])],
-)];
+pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[
+    ("Program", &[ParseRule::Nest("Exprs")]),
+    (
+        "Exprs",
+        &[
+            ParseRule::Nest("Expr"),
+            ParseRule::OptionalMany(&[
+                ParseRule::SingleToken(TokenName::Semicolon, None),
+                ParseRule::Nest("Expr"),
+            ]),
+        ],
+    ),
+    (
+        "Expr",
+        &[ParseRule::SingleToken(TokenName::IntLiteral, None)],
+    ),
+];
+
+pub static NANO_AI_RULES: &'static [(&'static str, fn(i32) -> i32)] = &[("Program", |i| i)];
