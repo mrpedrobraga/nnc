@@ -9,3 +9,6 @@ edition = "2021"
 colored = "2.0.4"
 lazy-regex = "3.0.1"
 regex = "1.9.5"
+
+[profile.release]
+strip = true
