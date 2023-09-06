@@ -1,6 +1,7 @@
 use crate::grammar::{ParseRule, TokenMatcher, TokenName};
 use lazy_regex::*;
 
+// The rules used to create the AST building blocks
 pub static NANO_TOKEN_RULES: &'static [TokenMatcher] = &[
     // Whitespace
     TokenMatcher {
@@ -82,14 +83,6 @@ pub static NANO_TOKEN_RULES: &'static [TokenMatcher] = &[
     },
 ];
 
-pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
-    "Program",
-    &[ParseRule::Conjunction(&[
-        &[ParseRule::SingleToken(TokenName::Identifier, Some("if"))],
-        &[ParseRule::SingleToken(TokenName::Identifier, None)],
-    ])],
-)];
-
 pub fn is_ghost_token(tname: &TokenName) -> bool {
     match tname {
         TokenName::Whitespace
@@ -100,3 +93,12 @@ pub fn is_ghost_token(tname: &TokenName) -> bool {
         _ => return false,
     }
 }
+
+// The rules used to create the AST
+pub static NANO_PARSE_RULES: &'static [(&'static str, &[ParseRule])] = &[(
+    "Program",
+    &[ParseRule::Conjunction(&[
+        &[ParseRule::SingleToken(TokenName::Identifier, Some("if"))],
+        &[ParseRule::SingleToken(TokenName::Identifier, None)],
+    ])],
+)];
