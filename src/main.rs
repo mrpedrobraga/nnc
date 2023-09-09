@@ -2,6 +2,7 @@ use crate::parser::build_tree;
 use colored::Colorize;
 use file_importer::import_as_text;
 use parser::tokenize;
+use parser::ParseError;
 use std::env;
 
 mod file_importer;
@@ -74,13 +75,18 @@ fn print_info() {
     );
 }
 
+enum CompilationError {
+    FileNotFound(std::io::Error),
+    ParseError(ParseError),
+}
+
 /// nnc compile <entry_point_path>
 fn compile(args: &Vec<String>) -> Result<bool, CompilationError> {
     // Read text from source file
     let source_path = (args[2]).as_str();
     let source = match read_file(source_path, args) {
-        Some(value) => value,
-        None => return None,
+        Ok(value) => value,
+        Err(e) => return Err(CompilationError::FileNotFound(e)),
     };
 
     // Tokenization: &str -> Vec<Token>
@@ -90,8 +96,8 @@ fn compile(args: &Vec<String>) -> Result<bool, CompilationError> {
     let tree = build_tree(&source, &tokens, "Program", false);
 
     let tree = match tree {
-        None => return None,
-        Some(t) => t,
+        Err(e) => return Err(CompilationError::ParseError(e)),
+        Ok(t) => t,
     };
 
     println!("{:#?}", tree);
@@ -154,7 +160,7 @@ fn print_help() {
 
 /// Reads a file as text, errors if an error is encountered,
 /// and returns its string if all was successful.
-fn read_file(source_path: &str, args: &Vec<String>) -> Option<String> {
+fn read_file(source_path: &str, args: &Vec<String>) -> Result<String, std::io::Error> {
     let source = import_as_text(source_path);
     let source = match source {
         Err(e) => {
@@ -166,9 +172,9 @@ fn read_file(source_path: &str, args: &Vec<String>) -> Option<String> {
                 args[2],
                 e
             );
-            return None;
+            return Err(e);
         }
         Ok(t) => t,
     };
-    Some(source)
+    Ok(source)
 }

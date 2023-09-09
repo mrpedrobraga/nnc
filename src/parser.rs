@@ -84,16 +84,18 @@ pub fn tokenize(source: &str) -> Vec<Token> {
     return tokens;
 }
 
+pub struct ParseError {}
+
 /// Builds a tree given a pool of vectors, and a starting rule.
 pub fn build_tree<'a>(
     source_str: &'a str,
     source: &'a Vec<Token>,
     top_level_rule_name: &'static str,
     keep_ghost_tokens: bool,
-) -> Option<AST<'a>> {
+) -> Result<AST<'a>, ParseError> {
     let top_level_rule = get_rule(NANO_PARSE_RULES, top_level_rule_name);
     let top_level_rule = match top_level_rule {
-        None => return None,
+        None => return Err(ParseError {}),
         Some(r) => r,
     };
 
@@ -108,14 +110,14 @@ pub fn build_tree<'a>(
     );
 
     let tree = match tree {
-        None => {
+        Err(e) => {
             println!("Parsing stage failed.");
-            return None;
+            return Err(e);
         }
-        Some(t) => t,
+        Ok(t) => t,
     };
 
-    return Some(AST {
+    return Ok(AST {
         is_abstract: !keep_ghost_tokens,
         root: ASTNode {
             matched_with: top_level_rule_name,
@@ -130,7 +132,7 @@ pub fn match_rule<'a>(
     rule: &[ParseRule],
     context: &ParseContext,
     keep_ghost_tokens: bool,
-) -> Option<ParseRuleMatchResult<'a>> {
+) -> Result<ParseRuleMatchResult<'a>, ParseError> {
     let mut token_slice_offset = 0;
     let mut fragment_index = 0;
     let mut content: Vec<ASTNodeContent> = Vec::new();
@@ -170,7 +172,7 @@ pub fn match_rule<'a>(
                     token_slice_offset += 1;
                 // Neither, rule can not be accepted
                 } else {
-                    return None;
+                    return Err(ParseError {});
                 }
             }
 
@@ -183,8 +185,8 @@ pub fn match_rule<'a>(
                 );
 
                 match sub_match {
-                    None => content.push(ASTNodeContent::None),
-                    Some(t) => {
+                    Err(_e) => content.push(ASTNodeContent::None),
+                    Ok(t) => {
                         if t.matched {
                             content.push(ASTNodeContent::Grouping(t.content));
                         }
@@ -198,7 +200,7 @@ pub fn match_rule<'a>(
             ParseRule::Many(sub_fragments) => {
                 let mut matched_at_least_once = false;
                 let mut many_content: Vec<ASTNodeContent> = Vec::new();
-
+                let err;
                 loop {
                     let sub_match = match_rule(
                         &source_token_pool[token_slice_offset..],
@@ -208,20 +210,21 @@ pub fn match_rule<'a>(
                     );
 
                     match sub_match {
-                        Some(t) => {
+                        Ok(t) => {
                             many_content.push(ASTNodeContent::Grouping(t.content));
                             println!("Matching");
                             token_slice_offset += t.advance;
                             matched_at_least_once = true;
                         }
-                        None => {
+                        Err(e) => {
+                            err = e;
                             break;
                         }
                     }
                 }
 
                 if !matched_at_least_once {
-                    return None;
+                    return Err(err);
                 }
 
                 fragment_index += 1;
@@ -240,12 +243,12 @@ pub fn match_rule<'a>(
                     );
 
                     match sub_match {
-                        Some(t) => {
+                        Ok(t) => {
                             many_content.push(ASTNodeContent::Grouping(t.content));
                             println!("Matching");
                             token_slice_offset += t.advance;
                         }
-                        None => {
+                        Err(_e) => {
                             break;
                         }
                     }
@@ -266,8 +269,8 @@ pub fn match_rule<'a>(
                         keep_ghost_tokens,
                     );
                     let nested_match = match nested_match {
-                        None => continue,
-                        Some(m) => m,
+                        Err(_e) => continue,
+                        Ok(m) => m,
                     };
 
                     fragment_index += 1;
@@ -278,7 +281,8 @@ pub fn match_rule<'a>(
                 }
 
                 if !matched_any {
-                    return None;
+                    // TODO Change this to an array of Parse Errors!
+                    return Err(ParseError {});
                 }
             }
 
@@ -298,21 +302,22 @@ pub fn match_rule<'a>(
                         keep_ghost_tokens,
                     );
                     let nested_match = match nested_match {
-                        None => {
+                        Err(_e) => {
                             failed_any = true;
                             break;
                         }
-                        Some(m) => m,
+                        Ok(m) => m,
                     };
                     last_match = Some(nested_match)
                 }
 
                 if failed_any {
-                    return None;
+                    // TODO Change this to an array of Parse Errors!
+                    return Err(ParseError {});
                 }
 
                 match last_match {
-                    None => return None,
+                    None => return Err(ParseError {}),
                     Some(lm) => {
                         fragment_index += 1;
                         token_slice_offset += lm.advance;
@@ -327,7 +332,8 @@ pub fn match_rule<'a>(
             ParseRule::Nest(sub_rule_name) => {
                 let sub_rule = get_rule(context.parse_rule_list, &sub_rule_name);
                 let sub_rule = match sub_rule {
-                    None => return None,
+                    // TODO Add case in ParseError for rule not found?
+                    None => return Err(ParseError {}),
                     Some(r) => r,
                 };
 
@@ -338,8 +344,8 @@ pub fn match_rule<'a>(
                     keep_ghost_tokens,
                 );
                 let nested_match = match nested_match {
-                    None => return None,
-                    Some(nm) => nm,
+                    Err(e) => return Err(e),
+                    Ok(nm) => nm,
                 };
 
                 fragment_index += 1;
@@ -353,7 +359,7 @@ pub fn match_rule<'a>(
         };
     }
 
-    return Some(ParseRuleMatchResult {
+    return Ok(ParseRuleMatchResult {
         matched: true,
         advance: token_slice_offset,
         content,
