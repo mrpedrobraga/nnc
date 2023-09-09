@@ -75,7 +75,7 @@ fn print_info() {
 }
 
 /// nnc compile <entry_point_path>
-fn compile(args: &Vec<String>) -> Option<bool> {
+fn compile(args: &Vec<String>) -> Result<bool, CompilationError> {
     // Read text from source file
     let source_path = (args[2]).as_str();
     let source = match read_file(source_path, args) {
@@ -96,7 +96,7 @@ fn compile(args: &Vec<String>) -> Option<bool> {
 
     println!("{:#?}", tree);
 
-    return Some(true);
+    return Ok(true);
 }
 
 /// nnc help
