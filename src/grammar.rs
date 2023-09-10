@@ -1,14 +1,9 @@
 use lazy_regex::*;
 
 #[derive(Debug)]
-pub struct Token {
+pub struct Token<'a> {
     pub name: TokenName,
-    pub occurrence_index: usize,
-    pub length: usize,
-}
-
-pub fn get_token_string_content<'a>(tok: &'a Token, src: &'a str) -> &'a str {
-    return &src[tok.occurrence_index..tok.occurrence_index + tok.length];
+    pub str_content: Option<&'a str>,
 }
 
 #[derive(Debug)]
@@ -87,7 +82,7 @@ pub struct ASTNode<'a> {
 #[derive(Debug)]
 pub enum ASTNodeContent<'a> {
     None,
-    Tok(&'a Token),
+    Tok(&'a Token<'a>),
     Grouping(Vec<ASTNodeContent<'a>>),
     Node(ASTNode<'a>),
 }

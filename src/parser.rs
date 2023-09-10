@@ -1,10 +1,7 @@
 use colored::Colorize;
 
 use crate::{
-    grammar::{
-        get_rule, get_token_string_content, ASTNode, ASTNodeContent, ParseRule, Token, TokenName,
-        AST,
-    },
+    grammar::{get_rule, ASTNode, ASTNodeContent, ParseRule, Token, TokenName, AST},
     nano_grammar::NANO_TOKEN_RULES,
     nano_grammar::{is_ghost_token, NANO_PARSE_RULES},
 };
@@ -30,7 +27,11 @@ pub fn tokenize(source: &str) -> Vec<Token> {
                 Some(c) => c,
             };
 
-            let matched_string = &captures[0];
+            let matched_string = captures.get(0);
+            let matched_string = match matched_string {
+                None => "",
+                Some(ms) => ms.as_str(),
+            };
 
             match matcher.name {
                 TokenName::BlockComment | TokenName::StringLiteral => {
@@ -55,8 +56,7 @@ pub fn tokenize(source: &str) -> Vec<Token> {
 
             tokens.push(Token {
                 name: matcher.name,
-                occurrence_index: char_offset,
-                length: matched_string.len(),
+                str_content: Some(matched_string),
             });
             char_offset += matched_string.len();
             has_match = true;
@@ -77,8 +77,7 @@ pub fn tokenize(source: &str) -> Vec<Token> {
 
     tokens.push(Token {
         name: TokenName::EOF,
-        occurrence_index: char_offset,
-        length: 0,
+        str_content: None,
     });
 
     return tokens;
@@ -154,9 +153,10 @@ pub fn match_rule<'a>(
                 let current_source_token = &source_token_pool[token_slice_offset];
                 let token_content_matches = match rule_token_content {
                     None => true,
-                    Some(s) => {
-                        get_token_string_content(current_source_token, context.source_string) == *s
-                    }
+                    Some(s) => match current_source_token.str_content {
+                        None => false,
+                        Some(st) => st == *s,
+                    },
                 };
 
                 // Source token matches Rule token!
