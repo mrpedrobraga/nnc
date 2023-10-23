@@ -1,85 +1,89 @@
 use crate::grammar::{ParseRule, TokenMatcher, TokenName};
-use lazy_regex::*;
+use lazy_regex::regex as rx;
 
 // The rules used to create the AST building blocks
 pub static NANO_TOKEN_RULES: &'static [TokenMatcher] = &[
     // Whitespace
     TokenMatcher {
         name: TokenName::Newline,
-        regex: regex!(r"^\r?\n"),
+        regex: rx!(r"^\r?\n"),
     },
     TokenMatcher {
         name: TokenName::Whitespace,
-        regex: regex!(r"^[ \s\r\f\t]+"),
+        regex: rx!(r"^[ \s\r\f\t]+"),
     },
     // AST Operators
     TokenMatcher {
         name: TokenName::Comma,
-        regex: regex!(r"^,"),
+        regex: rx!(r"^,"),
     },
     TokenMatcher {
         name: TokenName::Semicolon,
-        regex: regex!(r"^;"),
+        regex: rx!(r"^;"),
     },
     TokenMatcher {
         name: TokenName::Colon,
-        regex: regex!(r"^:"),
+        regex: rx!(r"^:"),
     },
     TokenMatcher {
         name: TokenName::ThinArrow,
-        regex: regex!(r"^->"),
+        regex: rx!(r"^->"),
     },
     TokenMatcher {
         name: TokenName::Pipe,
-        regex: regex!(r"^\|>"),
+        regex: rx!(r"^\|>"),
     },
     TokenMatcher {
         name: TokenName::ParenthesisOpen,
-        regex: regex!(r"^\("),
+        regex: rx!(r"^\("),
     },
     TokenMatcher {
         name: TokenName::ParenthesisClose,
-        regex: regex!(r"^\)"),
+        regex: rx!(r"^\)"),
     },
     TokenMatcher {
         name: TokenName::SqBracketsOpen,
-        regex: regex!(r"^\["),
+        regex: rx!(r"^\["),
     },
     TokenMatcher {
         name: TokenName::SqBracketsClose,
-        regex: regex!(r"^\]"),
+        regex: rx!(r"^\]"),
     },
     TokenMatcher {
         name: TokenName::CrBracketsOpen,
-        regex: regex!(r"^\{"),
+        regex: rx!(r"^\{"),
     },
     TokenMatcher {
         name: TokenName::CrBracketsClose,
-        regex: regex!(r"^\}"),
+        regex: rx!(r"^\}"),
     },
     // Literals
     TokenMatcher {
         name: TokenName::IntLiteral,
-        regex: regex!(r"^(0x[0-9a-zA-Z_]+|0b[0-9]+|[0-9_]+)"),
+        regex: rx!(r"^(0x[0-9a-zA-Z_]+|0b[0-9]+|[0-9_]+)"),
     },
     TokenMatcher {
         name: TokenName::StringLiteral,
-        regex: regex!(r#"^".*?""#),
+        regex: rx!(r#"^".*?""#),
     },
     // Identifier / Keyword
     TokenMatcher {
         name: TokenName::Identifier,
-        regex: regex!(r"^[a-zA-Z_][a-zA-Z0-9_]*"),
+        regex: rx!(r"^[a-zA-Z_][a-zA-Z0-9_]*"),
     },
     // Comments
     TokenMatcher {
         name: TokenName::Comment,
-        regex: regex!(r"^###[\s\S]*?###"),
+        regex: rx!(r"^###[\s\S]*?###"),
+    },
+    TokenMatcher {
+        name: TokenName::Comment,
+        regex: rx!(r"^#[\s\S]*?\n"),
     },
     // Operators
     TokenMatcher {
         name: TokenName::OpAnd,
-        regex: regex!(r"^#.*?\n"),
+        regex: rx!(r"^#.*?\n"),
     },
 ];
 
